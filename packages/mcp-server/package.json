@@ -1,0 +1,32 @@
+{
+  "name": "@canopyiq/mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for CanopyIQ - tracks Claude Code sessions for automatic PR documentation",
+  "main": "./dist/index.js",
+  "bin": {
+    "@canopyiq/mcp-server": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "claude",
+    "documentation",
+    "canopyiq"
+  ],
+  "author": "CanopyIQ",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.5.0",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "tsx": "^4.6.0",
+    "typescript": "^5.3.0"
+  }
+}

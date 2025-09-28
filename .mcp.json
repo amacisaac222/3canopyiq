@@ -1,0 +1,43 @@
+{
+  "name": "CanopyIQ Tracker",
+  "description": "Automatic tracking for Claude Code sessions",
+  "version": "1.0.0",
+  "servers": {
+    "canopyiq-tracker": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["packages/tracker/index.js"],
+      "env": {
+        "CANOPYIQ_API_URL": "http://localhost:3000/api/claude",
+        "PROJECT_ROOT": ".",
+        "AUTO_TRACK": "true"
+      }
+    }
+  },
+  "hooks": {
+    "onSessionStart": "node packages/tracker/session-start.js",
+    "onFileChange": "node packages/tracker/file-change.js",
+    "onCommand": "node packages/tracker/command-track.js"
+  },
+  "tracking": {
+    "enabled": true,
+    "includePatterns": [
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.js",
+      "**/*.jsx",
+      "**/*.json",
+      "**/*.md"
+    ],
+    "excludePatterns": [
+      "node_modules/**",
+      ".git/**",
+      "dist/**",
+      "build/**",
+      ".next/**"
+    ],
+    "trackCommands": true,
+    "trackFileEdits": true,
+    "trackSearches": true
+  }
+}

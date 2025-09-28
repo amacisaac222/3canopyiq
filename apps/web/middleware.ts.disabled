@@ -1,0 +1,160 @@
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
+
+// Create Redis client for rate limiting
+const redis = process.env.REDIS_URL
+  ? new Redis({
+      url: process.env.REDIS_URL,
+      token: process.env.REDIS_TOKEN || '',
+    })
+  : null
+
+// Create rate limiter instances
+const rateLimiters = {
+  // API endpoints - 100 requests per minute
+  api: redis
+    ? new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(100, '1 m'),
+        analytics: true,
+        prefix: 'ratelimit:api',
+      })
+    : null,
+
+  // GitHub webhooks - 1000 requests per minute
+  webhook: redis
+    ? new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(1000, '1 m'),
+        analytics: true,
+        prefix: 'ratelimit:webhook',
+      })
+    : null,
+
+  // Auth endpoints - 10 requests per minute
+  auth: redis
+    ? new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(10, '1 m'),
+        analytics: true,
+        prefix: 'ratelimit:auth',
+      })
+    : null,
+}
+
+export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+
+  // Skip rate limiting for static assets and Next.js internals
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/static') ||
+    pathname.includes('.')
+  ) {
+    return NextResponse.next()
+  }
+
+  // Apply rate limiting based on path
+  let rateLimiter = null
+  let identifier = request.ip ?? 'anonymous'
+
+  if (pathname.startsWith('/api/github/webhook')) {
+    rateLimiter = rateLimiters.webhook
+    // Use GitHub delivery ID if available
+    identifier = request.headers.get('x-github-delivery') || identifier
+  } else if (pathname.startsWith('/api/auth')) {
+    rateLimiter = rateLimiters.auth
+  } else if (pathname.startsWith('/api')) {
+    rateLimiter = rateLimiters.api
+  }
+
+  // Apply rate limiting if configured
+  if (rateLimiter) {
+    const { success, limit, reset, remaining } = await rateLimiter.limit(identifier)
+
+    const response = success
+      ? NextResponse.next()
+      : NextResponse.json(
+          {
+            error: 'Too many requests',
+            message: 'Please slow down and try again later',
+          },
+          { status: 429 }
+        )
+
+    // Add rate limit headers
+    response.headers.set('X-RateLimit-Limit', limit.toString())
+    response.headers.set('X-RateLimit-Remaining', remaining.toString())
+    response.headers.set('X-RateLimit-Reset', new Date(reset).toISOString())
+
+    // Add security headers
+    response.headers.set('X-Frame-Options', 'DENY')
+    response.headers.set('X-Content-Type-Options', 'nosniff')
+    response.headers.set('X-XSS-Protection', '1; mode=block')
+    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+    response.headers.set(
+      'Permissions-Policy',
+      'camera=(), microphone=(), geolocation=(), interest-cohort=()'
+    )
+
+    // Add CORS headers for API routes
+    if (pathname.startsWith('/api')) {
+      const origin = request.headers.get('origin')
+      const allowedOrigins = [
+        process.env.NEXT_PUBLIC_APP_URL,
+        'http://localhost:3000',
+        'http://localhost:3001',
+      ].filter(Boolean)
+
+      if (origin && allowedOrigins.includes(origin)) {
+        response.headers.set('Access-Control-Allow-Origin', origin)
+        response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+        response.headers.set(
+          'Access-Control-Allow-Headers',
+          'Content-Type, Authorization, X-Requested-With'
+        )
+        response.headers.set('Access-Control-Max-Age', '86400')
+      }
+    }
+
+    // Log rate limit events
+    if (!success) {
+      console.warn(`Rate limit exceeded for ${identifier} on ${pathname}`)
+
+      // Report to Sentry if available
+      if (typeof window === 'undefined') {
+        try {
+          const Sentry = await import('@sentry/nextjs')
+          Sentry.captureMessage(`Rate limit exceeded: ${pathname}`, {
+            level: 'warning',
+            tags: {
+              identifier,
+              pathname,
+            },
+          })
+        } catch (error) {
+          // Sentry not available
+        }
+      }
+    }
+
+    return response
+  }
+
+  return NextResponse.next()
+}
+
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
+}

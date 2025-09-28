@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "canopyiq": {
+      "command": "node",
+      "args": ["C:\\Users\\amaci\\Desktop\\3CanopyIQ\\packages\\mcp-server\\dist\\index.js"],
+      "env": {
+        "CANOPYIQ_API_KEY": "test-api-key-123",
+        "CANOPYIQ_ENDPOINT": "http://localhost:3000/api/claude"
+      }
+    }
+  }
+}

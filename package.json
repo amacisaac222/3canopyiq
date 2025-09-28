@@ -1,0 +1,25 @@
+{
+  "name": "canopyiq",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Intelligence above your code - see the forest AND the trees",
+  "scripts": {
+    "dev": "pnpm --parallel run dev",
+    "build": "pnpm run --recursive build",
+    "db:push": "pnpm --filter @canopyiq/database db:push",
+    "db:studio": "pnpm --filter @canopyiq/database db:studio",
+    "lint": "pnpm run --recursive lint",
+    "test": "pnpm run --recursive test",
+    "track": "node packages/tracker/index.js",
+    "track:install": "cd packages/tracker && npm install"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.1"
+}

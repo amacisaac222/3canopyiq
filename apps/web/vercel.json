@@ -1,0 +1,53 @@
+{
+  "functions": {
+    "app/api/github/webhook/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/events/stream/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/lineage/[id]/route.ts": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "DATABASE_URL": "@database_url",
+    "REDIS_URL": "@redis_url",
+    "GITHUB_APP_ID": "@github_app_id",
+    "GITHUB_PRIVATE_KEY": "@github_private_key",
+    "GITHUB_WEBHOOK_SECRET": "@github_webhook_secret",
+    "NEXT_PUBLIC_APP_URL": "@next_public_app_url",
+    "NEXT_PUBLIC_WS_URL": "@next_public_ws_url",
+    "SENTRY_DSN": "@sentry_dsn",
+    "ORGANIZATION_ID": "@organization_id"
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, must-revalidate"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/ws",
+      "destination": "https://canopyiq-ws.railway.app"
+    }
+  ]
+}

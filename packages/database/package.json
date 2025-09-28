@@ -1,0 +1,24 @@
+{
+  "name": "@canopyiq/database",
+  "version": "0.1.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "db:push": "drizzle-kit push:pg",
+    "db:studio": "drizzle-kit studio",
+    "db:generate": "drizzle-kit generate:pg"
+  },
+  "dependencies": {
+    "@canopyiq/shared": "workspace:*",
+    "drizzle-orm": "^0.29.2",
+    "postgres": "^3.4.3",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "drizzle-kit": "^0.20.9",
+    "typescript": "^5.3.3"
+  }
+}

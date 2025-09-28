@@ -1,0 +1,192 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // GitHub App
+  githubInstallationId Int?     @unique
+  githubAppInstalled   Boolean  @default(false)
+  githubAccessToken    String?
+
+  // Billing
+  plan         String   @default("beta_free") // beta_free, starter, team, enterprise
+  stripeCustomerId String?
+
+  users        User[]
+  repositories Repository[]
+  pullRequests PullRequest[]
+  sessions     ClaudeSession[]
+  apiKeys      ApiKey[]
+
+  @@index([slug])
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String?
+  role      String   @default("developer") // admin, developer, viewer
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // GitHub
+  githubId       String?  @unique
+  githubUsername String?
+  githubAvatar   String?
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  sessions       ClaudeSession[]
+  pullRequests   PullRequest[]
+
+  @@index([email])
+  @@index([organizationId])
+}
+
+model Repository {
+  id        String   @id @default(cuid())
+  name      String
+  fullName  String   // owner/repo format
+  githubId  Int      @unique
+  isPrivate Boolean  @default(true)
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  pullRequests   PullRequest[]
+  sessions       ClaudeSession[]
+
+  @@unique([organizationId, fullName])
+  @@index([organizationId])
+}
+
+model PullRequest {
+  id           String   @id @default(cuid())
+  number       Int
+  title        String
+  githubId     Int      @unique
+  state        String   // open, closed, merged
+  draft        Boolean  @default(false)
+  githubUrl    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  mergedAt     DateTime?
+
+  // Metrics
+  additions    Int      @default(0)
+  deletions    Int      @default(0)
+  changedFiles Int      @default(0)
+
+  // Documentation
+  documentationGenerated Boolean  @default(false)
+  documentationPosted    Boolean  @default(false)
+  documentationQuality   Float?   // 0-100 score
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  repositoryId   String
+  repository     Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  authorId       String?
+  author         User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  sessions       ClaudeSession[]
+  documentation  Documentation?
+
+  @@unique([repositoryId, number])
+  @@index([organizationId])
+  @@index([repositoryId])
+  @@index([authorId])
+}
+
+model ClaudeSession {
+  id          String   @id @default(cuid())
+  sessionId   String   @unique // From MCP server
+  startedAt   DateTime @default(now())
+  endedAt     DateTime?
+
+  // Content
+  conversationChunks String  @default("[]") // JSON array of conversation chunks
+  filesChanged       String  @default("[]") // JSON array of file paths
+  decisionsExtracted String  @default("[]") // JSON array of decisions
+
+  // Metrics
+  duration           Int?     // seconds
+  linesAdded         Int      @default(0)
+  linesRemoved       Int      @default(0)
+  aiContribution     Float?   // 0-100 percentage
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId         String?
+  user           User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  repositoryId   String?
+  repository     Repository? @relation(fields: [repositoryId], references: [id], onDelete: SetNull)
+
+  pullRequestId  String?
+  pullRequest    PullRequest? @relation(fields: [pullRequestId], references: [id], onDelete: SetNull)
+
+  @@index([sessionId])
+  @@index([organizationId])
+  @@index([userId])
+  @@index([pullRequestId])
+}
+
+model Documentation {
+  id            String   @id @default(cuid())
+  content       String   // Markdown content
+  summary       String?
+  decisions     String   @default("[]") // JSON array of key decisions made
+
+  // Impact Analysis
+  securityImpact    String?  // low, medium, high
+  performanceImpact String?  // negative, neutral, positive
+  breakingChanges   Boolean  @default(false)
+
+  // Metrics
+  aiContribution    Float?   // 0-100 percentage
+  timeSaved         Int?     // estimated minutes
+  issuesPrevented   Int      @default(0)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  pullRequestId String   @unique
+  pullRequest   PullRequest @relation(fields: [pullRequestId], references: [id], onDelete: Cascade)
+
+  @@index([pullRequestId])
+}
+
+model ApiKey {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  name      String
+  lastUsed  DateTime?
+  createdAt DateTime @default(now())
+  expiresAt DateTime?
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([key])
+  @@index([organizationId])
+}

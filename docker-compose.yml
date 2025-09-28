@@ -1,0 +1,63 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: canopyiq-postgres
+    environment:
+      POSTGRES_USER: canopyiq
+      POSTGRES_PASSWORD: canopyiq
+      POSTGRES_DB: canopyiq
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U canopyiq"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - canopyiq-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: canopyiq-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - canopyiq-network
+
+  adminer:
+    image: adminer:latest
+    container_name: canopyiq-adminer
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DESIGN: 'dracula'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - canopyiq-network
+
+volumes:
+  postgres_data:
+    name: canopyiq_postgres_data
+  redis_data:
+    name: canopyiq_redis_data
+
+networks:
+  canopyiq-network:
+    name: canopyiq-network
+    driver: bridge

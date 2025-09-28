@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary: #0F4C2A;
+    --primary-dark: #0A3A20;
+    --primary-light: #146634;
+    --secondary: #00A86B;
+    --secondary-dark: #008A57;
+    --secondary-light: #00C97F;
+    --accent: #00FF88;
+    --accent-dark: #00CC6E;
+    --accent-light: #33FFA0;
+    --background: #000805;
+    --surface: #0A1A0F;
+    --text: #E0FFE0;
+    --text-muted: #A0D0A0;
+    --border: #1A3A20;
+  }
+
+  body {
+    @apply bg-background text-text;
+    background: linear-gradient(180deg, #000805 0%, #0A1A0F 100%);
+    min-height: 100vh;
+  }
+
+  * {
+    @apply border-border;
+  }
+}
+
+@layer components {
+  .canopy-card {
+    @apply bg-surface border border-border rounded-lg p-6 shadow-lg;
+    background: linear-gradient(135deg, rgba(15, 76, 42, 0.1) 0%, rgba(0, 168, 107, 0.05) 100%);
+  }
+
+  .canopy-button {
+    @apply px-4 py-2 rounded-md font-medium transition-all duration-200;
+    @apply bg-primary hover:bg-primary-light text-text;
+    @apply border border-primary-light hover:border-accent;
+    @apply shadow-md hover:shadow-lg hover:shadow-accent/20;
+  }
+
+  .canopy-input {
+    @apply w-full px-3 py-2 rounded-md;
+    @apply bg-surface border border-border;
+    @apply text-text placeholder-text-muted;
+    @apply focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/50;
+  }
+}
