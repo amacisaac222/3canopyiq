@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.20.0",
     "@canopyiq/analytics": "workspace:*",
     "@canopyiq/database": "workspace:*",
     "@canopyiq/shared": "workspace:*",

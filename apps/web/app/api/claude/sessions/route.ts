@@ -66,6 +66,13 @@ export async function POST(request: Request) {
         linesChanged: 0,
         commands: 0,
         events: [],
+        explorations: 0,
+        searches: 0,
+        decisions: 0,
+        failedAttempts: 0,
+        revisits: 0,
+        searchPatterns: [],
+        insights: null,
         ...data
       }
       sessions.push(newSession)
@@ -97,7 +104,7 @@ export async function POST(request: Request) {
         ...data
       }
       return NextResponse.json(sessions[sessionIndex])
-    } else if (action === 'addEvent') {
+    } else if (action === 'addEvent' || action === 'addContextualEvent') {
       // Add an event to a session
       let sessionIndex = sessions.findIndex(s => s.sessionId === sessionId)
 
@@ -112,6 +119,13 @@ export async function POST(request: Request) {
           linesChanged: 0,
           commands: 0,
           events: [],
+          explorations: 0,
+          searches: 0,
+          decisions: 0,
+          failedAttempts: 0,
+          revisits: 0,
+          searchPatterns: [],
+          insights: null,
           summary: 'Auto-tracked session'
         }
         sessions.push(newSession)
@@ -132,6 +146,28 @@ export async function POST(request: Request) {
         sessions[sessionIndex].linesChanged += (data.linesAdded || 0) + (data.linesRemoved || 0)
       } else if (data.type === 'command') {
         sessions[sessionIndex].commands++
+      } else if (data.type === 'exploration') {
+        // Track exploration events
+        sessions[sessionIndex].explorations = (sessions[sessionIndex].explorations || 0) + 1
+        if (data.metadata?.isRevisit) {
+          sessions[sessionIndex].revisits = (sessions[sessionIndex].revisits || 0) + 1
+        }
+      } else if (data.type === 'search') {
+        // Track search patterns
+        sessions[sessionIndex].searches = (sessions[sessionIndex].searches || 0) + 1
+        if (!sessions[sessionIndex].searchPatterns) {
+          sessions[sessionIndex].searchPatterns = []
+        }
+        sessions[sessionIndex].searchPatterns.push(data.pattern || data.description)
+      } else if (data.type === 'decision') {
+        // Track decision points
+        sessions[sessionIndex].decisions = (sessions[sessionIndex].decisions || 0) + 1
+      } else if (data.type === 'failed_attempt') {
+        // Track failed attempts
+        sessions[sessionIndex].failedAttempts = (sessions[sessionIndex].failedAttempts || 0) + 1
+      } else if (data.type === 'session_insights') {
+        // Store session insights
+        sessions[sessionIndex].insights = data.metadata
       }
 
       return NextResponse.json(sessions[sessionIndex])
