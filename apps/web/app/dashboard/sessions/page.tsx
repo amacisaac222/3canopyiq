@@ -194,7 +194,7 @@ export default function ClaudeSessionsPage() {
                               args: ["@canopyiq/mcp-server"],
                               env: {
                                 CANOPYIQ_API_KEY: "your-api-key",
-                                CANOPYIQ_ENDPOINT: `${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/api/claude`
+                                CANOPYIQ_ENDPOINT: `${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'}/api/claude`
                               }
                             }
                           }
@@ -226,7 +226,7 @@ export default function ClaudeSessionsPage() {
       args: ["@canopyiq/mcp-server"],
       env: {
         CANOPYIQ_API_KEY: "your-api-key",
-        CANOPYIQ_ENDPOINT: `${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/api/claude`
+        CANOPYIQ_ENDPOINT: `${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'}/api/claude`
       }
     }
   }

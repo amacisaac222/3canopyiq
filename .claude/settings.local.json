@@ -14,7 +14,9 @@
       "Bash(node:*)",
       "Bash(git remote add:*)",
       "Bash(git add:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(git commit:*)",
+      "Bash(pnpm add:*)"
     ],
     "deny": [],
     "ask": []
