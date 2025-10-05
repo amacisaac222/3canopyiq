@@ -11,6 +11,7 @@ services:
     plan: starter
     region: oregon
     maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
 
   # Web Application (Next.js)
   - type: web
