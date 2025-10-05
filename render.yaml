@@ -1,0 +1,86 @@
+databases:
+  - name: canopyiq-db
+    databaseName: canopyiq
+    plan: starter
+    region: oregon
+
+services:
+  # Redis Cache
+  - type: redis
+    name: canopyiq-redis
+    plan: starter
+    region: oregon
+    maxmemoryPolicy: allkeys-lru
+
+  # Web Application (Next.js)
+  - type: web
+    name: canopyiq-web
+    env: docker
+    region: oregon
+    plan: starter
+    dockerfilePath: ./apps/web/Dockerfile
+    dockerContext: ./
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: canopyiq-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: canopyiq-redis
+          type: redis
+          property: connectionString
+      - key: GITHUB_APP_ID
+        value: 2024979
+      - key: GITHUB_PRIVATE_KEY
+        sync: false
+      - key: GITHUB_WEBHOOK_SECRET
+        sync: false
+      - key: NEXTAUTH_SECRET
+        generateValue: true
+      - key: NEXTAUTH_URL
+        fromService:
+          name: canopyiq-web
+          type: web
+          property: host
+      - key: NEXT_PUBLIC_APP_URL
+        fromService:
+          name: canopyiq-web
+          type: web
+          property: host
+      - key: NEXT_PUBLIC_WS_URL
+        fromService:
+          name: canopyiq-mcp
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: ORGANIZATION_ID
+        value: canopyiq-default
+
+  # MCP Server (WebSocket)
+  - type: web
+    name: canopyiq-mcp
+    env: docker
+    region: oregon
+    plan: starter
+    dockerfilePath: ./apps/mcp-server/Dockerfile
+    dockerContext: ./
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8080
+      - key: DATABASE_URL
+        fromDatabase:
+          name: canopyiq-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: canopyiq-redis
+          type: redis
+          property: connectionString
+      - key: ORGANIZATION_ID
+        value: canopyiq-default
